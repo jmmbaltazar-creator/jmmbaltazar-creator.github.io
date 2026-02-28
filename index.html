@@ -96,6 +96,9 @@ body {
   transform-style: preserve-3d;
   transition: transform 0.5s ease;
   filter: drop-shadow(0 40px 80px rgba(0,0,0,0.7)) drop-shadow(0 8px 24px rgba(0,0,0,0.5));
+  /* Pre-promote to GPU layer so first animation is instant */
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 /* ---- Envelope body ---- */
@@ -277,13 +280,14 @@ body {
   position:fixed; inset:0;
   background:var(--beige);
   opacity:0; visibility:hidden;
-  transform: scale(0.96);
+  transform: scale(0.96) translateZ(0);
   transition:
     opacity    0.85s cubic-bezier(0.4,0,0.2,1),
     visibility 0.85s cubic-bezier(0.4,0,0.2,1),
     transform  0.85s cubic-bezier(0.4,0,0.2,1);
   display:flex; flex-direction:column;
   overflow:hidden; z-index:50;
+  will-change: transform, opacity;
 }
 #site.visible {
   opacity:1; visibility:visible; transform:scale(1);
@@ -642,6 +646,8 @@ body {
   transition: transform 1.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   pointer-events: none;
   z-index: 12;
+  /* Pre-promote to GPU layer */
+  will-change: transform;
 }
 
 /* Flap image — fills the container; clipped to triangle by parent */
@@ -1162,6 +1168,14 @@ document.addEventListener('DOMContentLoaded', function() {
   const ctx    = canvas.getContext('2d');
 
   let W, H, stars = [], lanterns = [];
+  let rafId = null;
+  let paused = false;
+
+  // Expose pause/resume globally so openEnvelope can call them
+  window.pauseCanvas  = function() { paused = true; };
+  window.resumeCanvas = function() {
+    if (paused) { paused = false; if (!rafId) draw(); }
+  };
 
   function resize() {
     W = canvas.width  = window.innerWidth;
@@ -1277,6 +1291,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   /* --- Render loop --- */
   function draw() {
+    if (paused) { rafId = null; return; }
+
     /* deep indigo-black sky gradient */
     const sky = ctx.createLinearGradient(0, 0, 0, H);
     sky.addColorStop(0,    '#02010A');
@@ -1303,7 +1319,7 @@ document.addEventListener('DOMContentLoaded', function() {
       l.draw(ctx);
     }
 
-    requestAnimationFrame(draw);
+    rafId = requestAnimationFrame(draw);
   }
 
   function init() {
@@ -1331,6 +1347,9 @@ function openEnvelope() {
   if (opened) return;
   opened = true;
 
+  // Stop canvas immediately — free up GPU for the animation
+  pauseCanvas();
+
   const seal  = document.getElementById('wax-seal');
   const flap  = document.getElementById('env-flap-svg');
 
@@ -1344,7 +1363,7 @@ function openEnvelope() {
   seal.querySelector('.seal-hint').style.opacity = '0';
 
   /* slight envelope lift */
-  document.getElementById('envelope').style.transform = 'translateY(-10px) scale(1.02)';
+  document.getElementById('envelope').style.transform = 'translateY(-10px) scale(1.02) translateZ(0)';
   document.getElementById('envelope').style.transition = 'transform 0.6s cubic-bezier(0.34,1.56,0.64,1)';
 
   /* break seal */
@@ -1352,12 +1371,12 @@ function openEnvelope() {
 
   /* open flap */
   setTimeout(() => {
-    flap.style.transform      = 'rotateX(-178deg)';
+    flap.style.transform      = 'rotateX(-178deg) translateZ(0)';
     flap.style.transformOrigin = 'top center';
     flap.style.transition     = 'transform 1.3s cubic-bezier(0.25,0.46,0.45,0.94)';
   }, 200);
 
-  /* reveal site */
+  /* reveal site — canvas stays paused, it's hidden under the site anyway */
   setTimeout(() => {
     document.getElementById('landing').classList.add('hidden');
     document.getElementById('site').classList.add('visible');
@@ -1377,8 +1396,11 @@ function closeInvitation() {
     seal.style.animation = 'none';
     seal.querySelector('.seal-hint').style.opacity = '1';
     document.getElementById('envelope').style.transform = '';
-    /* restart seal animation after re-render */
-    requestAnimationFrame(() => { seal.style.animation = ''; });
+    requestAnimationFrame(() => {
+      seal.style.animation = '';
+      // Resume canvas now that we're back on the landing page
+      resumeCanvas();
+    });
   }, 850);
 }
 
