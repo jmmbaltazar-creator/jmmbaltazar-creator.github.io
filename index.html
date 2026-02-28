@@ -1296,65 +1296,56 @@ document.addEventListener('DOMContentLoaded', function() {
     const ns  = 'http://www.w3.org/2000/svg';
     const id  = 'tl' + Math.random().toString(36).slice(2,8);
 
-    /* Dimensions - barrel: wider at equator, narrower at poles */
+    /* Dimensions - rectangular lantern with only slight rounding */
     const cx   = r + 14;          // SVG centre x (padding for glow)
     const tw   = (r + 14) * 2;    // total SVG width
-    const th   = r * 2.8 + 40;    // total SVG height (inc string+flame)
-    const ty   = 16;              // top of body (below string)
-    const bh   = r * 2.2;         // body height
+    const th   = r * 3.2 + 10;    // taller for rectangular proportion
+    const ty   = 4;               // top of body
+    const bh   = r * 3.0;         // body height — tall rectangle
     const by   = ty + 4;          // body y start (below cap)
 
-    /* Colour palette */
-    const core   = `hsl(${hue},100%,94%)`;
-    const mid    = `hsl(${hue},95%,78%)`;
-    const edge   = `hsl(${hue},85%,58%)`;
-    const dark   = `hsl(${hue-8},70%,38%)`;
-    const capCol = `hsl(${hue-12},60%,32%)`;
-    const wireC  = `rgba(180,120,40,0.6)`;
+    /* Colour palette — orange-dominant */
+    const core   = `hsl(${hue},100%,92%)`;
+    const mid    = `hsl(${hue-6},98%,72%)`;
+    const edge   = `hsl(${hue-14},90%,52%)`;
+    const dark   = `hsl(${hue-18},80%,34%)`;
+    const capCol = `hsl(${hue-20},65%,28%)`;
+    const wireC  = `rgba(180,90,20,0.6)`;
 
     const svg = document.createElementNS(ns, 'svg');
     svg.setAttribute('width',   tw);
     svg.setAttribute('height',  th);
     svg.setAttribute('viewBox', `0 0 ${tw} ${th}`);
 
-    /* Control points for the barrel shape:
-       The body is drawn as a path with cubic bezier sides
-       so it bulges at the equator like a real paper lantern  */
+    /* Rectangular shape: nearly straight sides, just slightly curved */
     const top    = by;
     const bot    = by + bh;
     const mid_y  = by + bh * 0.5;
-    const topW   = r * 0.52;   // half-width at top ring
-    const midW   = r * 0.98;   // half-width at equator (widest)
-    const botW   = r * 0.50;   // half-width at bottom ring
+    const hw     = r * 0.82;   // half-width — consistent top to bottom (rectangular)
+    const topW   = hw;
+    const midW   = hw * 1.04;  // barely any bulge — nearly straight
+    const botW   = hw;
 
-    /* Left and right curves */
+    /* Nearly-straight left and right sides */
     const pathL = `M ${cx-topW} ${top}
-      C ${cx-midW*1.05} ${top  + bh*0.25},
-        ${cx-midW*1.05} ${bot  - bh*0.25},
+      C ${cx-midW} ${top + bh*0.3},
+        ${cx-midW} ${bot - bh*0.3},
         ${cx-botW} ${bot}`;
     const pathR = `M ${cx+topW} ${top}
-      C ${cx+midW*1.05} ${top  + bh*0.25},
-        ${cx+midW*1.05} ${bot  - bh*0.25},
+      C ${cx+midW} ${top + bh*0.3},
+        ${cx+midW} ${bot - bh*0.3},
         ${cx+botW} ${bot}`;
 
-    /* Full closed barrel shape for fills */
+    /* Full closed rectangular shape */
     const barrelPath =
       `M ${cx-topW} ${top}
-       C ${cx-midW*1.05} ${top+bh*0.25}, ${cx-midW*1.05} ${bot-bh*0.25}, ${cx-botW} ${bot}
+       C ${cx-midW} ${top+bh*0.3}, ${cx-midW} ${bot-bh*0.3}, ${cx-botW} ${bot}
        L ${cx+botW} ${bot}
-       C ${cx+midW*1.05} ${bot-bh*0.25}, ${cx+midW*1.05} ${top+bh*0.25}, ${cx+topW} ${top}
+       C ${cx+midW} ${bot-bh*0.3}, ${cx+midW} ${top+bh*0.3}, ${cx+topW} ${top}
        Z`;
 
-    /* Rib y-positions (horizontal rings at ~20%, 40%, 60%, 80%) */
-    const ribs = [0.18, 0.38, 0.58, 0.78].map(t => {
-      const y  = by + bh * t;
-      /* width at this y by lerping top/mid/bot */
-      const tt = t < 0.5 ? t/0.5 : (1-t)/0.5;
-      const hw = t < 0.5
-        ? topW + (midW - topW) * (t / 0.5)
-        : midW + (botW - midW) * ((t - 0.5) / 0.5);
-      return { y, hw };
-    });
+    /* Ribs kept for reference but not rendered (removed per v2) */
+    const ribs = [];
 
     svg.innerHTML = `
       <defs>
@@ -1384,10 +1375,6 @@ document.addEventListener('DOMContentLoaded', function() {
         </clipPath>
       </defs>
 
-      <!-- Hanging string -->
-      <line x1="${cx}" y1="0" x2="${cx}" y2="${ty}"
-        stroke="${wireC}" stroke-width="0.9"/>
-
       <!-- Body: fill with radial glow -->
       <path d="${barrelPath}" fill="url(#${id}r)"/>
 
@@ -1397,43 +1384,34 @@ document.addEventListener('DOMContentLoaded', function() {
         <rect x="0" y="${top}" width="${tw}" height="${bh}" fill="url(#${id}v)"/>
       </g>
 
-      <!-- Side curves (wire lines) -->
-      <path d="${pathL}" fill="none" stroke="${wireC}" stroke-width="0.7" opacity="0.7"/>
-      <path d="${pathR}" fill="none" stroke="${wireC}" stroke-width="0.7" opacity="0.7"/>
-
-      <!-- Horizontal ribs -->
-      ${ribs.map(({y,hw}) =>
-        `<ellipse cx="${cx}" cy="${y}" rx="${hw}" ry="${r*0.06}"
-          fill="none" stroke="${wireC}" stroke-width="0.9" opacity="0.65"/>`
-      ).join('')}
-
-      <!-- Top ring cap -->
-      <ellipse cx="${cx}" cy="${top}" rx="${topW}" ry="${r*0.1}"
-        fill="${capCol}" opacity="0.92"/>
-      <ellipse cx="${cx}" cy="${top}" rx="${topW*0.7}" ry="${r*0.06}"
-        fill="rgba(0,0,0,0.25)"/>
+      <!-- Top cap — flat plate with raised loop ring -->
+      <ellipse cx="${cx}" cy="${top}" rx="${topW}" ry="${r*0.13}"
+        fill="${capCol}" opacity="0.95"/>
+      <!-- Rim highlight on top plate -->
+      <ellipse cx="${cx}" cy="${top}" rx="${topW}" ry="${r*0.13}"
+        fill="none" stroke="rgba(255,220,120,0.35)" stroke-width="0.8"/>
+      <!-- Raised centre loop/knob -->
+      <ellipse cx="${cx}" cy="${top - r*0.08}" rx="${topW*0.32}" ry="${r*0.09}"
+        fill="hsl(${hue-18},55%,28%)" opacity="0.95"/>
+      <ellipse cx="${cx}" cy="${top - r*0.08}" rx="${topW*0.32}" ry="${r*0.09}"
+        fill="none" stroke="rgba(255,210,100,0.3)" stroke-width="0.7"/>
+      <!-- Inner shadow on top plate -->
+      <ellipse cx="${cx}" cy="${top}" rx="${topW*0.65}" ry="${r*0.06}"
+        fill="rgba(0,0,0,0.2)"/>
 
       <!-- Bottom ring cap -->
       <ellipse cx="${cx}" cy="${bot}" rx="${botW}" ry="${r*0.1}"
         fill="${capCol}" opacity="0.9"/>
 
-      <!-- Inner flame glow (seen through paper) -->
-      <ellipse cx="${cx}" cy="${mid_y}" rx="${midW*0.55}" ry="${bh*0.28}"
-        fill="rgba(255,240,120,0.18)" clip-path="url(#${id}c)"/>
-      <ellipse cx="${cx}" cy="${mid_y+bh*0.1}" rx="${midW*0.3}" ry="${bh*0.18}"
-        fill="rgba(255,255,180,0.22)" clip-path="url(#${id}c)"/>
-
-      <!-- Visible flame below body -->
-      <ellipse cx="${cx}" cy="${bot+10}" rx="${r*0.28}" ry="${r*0.22}"
-        fill="rgba(255,190,40,0.5)"/>
-      <ellipse cx="${cx}" cy="${bot+9}"  rx="${r*0.16}" ry="${r*0.28}"
-        fill="rgba(255,230,100,0.82)"/>
-      <ellipse cx="${cx}" cy="${bot+6}"  rx="${r*0.08}" ry="${r*0.18}"
-        fill="rgba(255,255,200,0.95)"/>
-      <!-- Flame tip -->
-      <path d="M ${cx} ${bot+2} Q ${cx+r*0.04} ${bot-r*0.1} ${cx} ${bot-r*0.18}
-               Q ${cx-r*0.04} ${bot-r*0.1} ${cx} ${bot+2}"
-        fill="rgba(255,255,220,0.7)"/>
+      <!-- Inner flame glow — orange, positioned at bottom 25% of body -->
+      <ellipse cx="${cx}" cy="${bot - bh*0.20}" rx="${midW*0.62}" ry="${bh*0.22}"
+        fill="rgba(255,110,20,0.18)" clip-path="url(#${id}c)"/>
+      <ellipse cx="${cx}" cy="${bot - bh*0.13}" rx="${midW*0.42}" ry="${bh*0.17}"
+        fill="rgba(255,150,30,0.28)" clip-path="url(#${id}c)"/>
+      <ellipse cx="${cx}" cy="${bot - bh*0.07}" rx="${midW*0.26}" ry="${bh*0.11}"
+        fill="rgba(255,180,50,0.40)" clip-path="url(#${id}c)"/>
+      <ellipse cx="${cx}" cy="${bot - bh*0.03}" rx="${midW*0.14}" ry="${bh*0.06}"
+        fill="rgba(255,210,80,0.55)" clip-path="url(#${id}c)"/>
     `;
     return svg;
   }
@@ -1452,8 +1430,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 : tier < 0.8 ? Math.random()*5+11    // mid   11–16
                 :               Math.random()*6+17;  // large 17–23
 
-    /* Hue: warm gold range (38–52) */
-    const hue = Math.random()*14+38;
+    /* Hue: amber range (30–44) */
+    const hue = Math.random()*14+30;
 
     const rise   = (Math.random()*10 + 18).toFixed(1);   // 18–28s — slow, smooth
     const delay  = -(Math.random()*28).toFixed(1);        // pre-stagger across full cycle
@@ -1466,7 +1444,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const op     = (tier < 0.4 ? Math.random()*0.2+0.5   // small — dimmer
                    :              Math.random()*0.15+0.75).toFixed(2);
     const gr     = Math.round(r * 1.1);
-    const gc     = `hsla(${Math.round(hue)},95%,65%,0.8)`;
+    const gc     = `hsla(${Math.round(hue)},100%,58%,0.8)`;
 
     wrap.style.cssText = [
       `left:${(Math.random()*98).toFixed(1)}%`,
