@@ -43,13 +43,101 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ===================== LANTERN SKY CANVAS ===================== */
-#sky-canvas {
+/* ===================== CSS SKY BACKGROUND ===================== */
+#sky-bg {
   position: fixed;
   inset: 0;
-  width: 100%;
-  height: 100%;
   z-index: 0;
+  background:
+    radial-gradient(ellipse 120% 55% at 50% 110%, rgba(180,80,10,0.45) 0%, transparent 55%),
+    radial-gradient(ellipse 70%  40% at 18% 70%,  rgba(80,25,5,0.35)   0%, transparent 60%),
+    radial-gradient(ellipse 60%  35% at 82% 60%,  rgba(50,15,30,0.3)   0%, transparent 60%),
+    linear-gradient(180deg, #000008 0%, #04011a 20%, #080220 40%, #0e0415 60%, #160608 80%, #200a04 100%);
+  overflow: hidden;
+}
+#sky-bg::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 50% 30% at 12% 22%, rgba(60,20,110,0.13) 0%, transparent 100%),
+    radial-gradient(ellipse 40% 22% at 78% 12%, rgba(15,35,100,0.11) 0%, transparent 100%),
+    radial-gradient(ellipse 35% 20% at 45%  8%, rgba(40,10,80,0.09)  0%, transparent 100%);
+  pointer-events: none;
+}
+#sky-bg::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0; height: 40%;
+  background: linear-gradient(0deg,
+    rgba(200,80,10,0.3) 0%,
+    rgba(160,55,8,0.15) 30%,
+    rgba(100,30,5,0.06) 60%,
+    transparent 100%);
+  pointer-events: none;
+}
+
+/* ---- Stars ---- */
+.star {
+  position: absolute;
+  border-radius: 50%;
+  background: #fff;
+  animation: star-twinkle var(--dur,3s) ease-in-out infinite var(--delay,0s);
+  will-change: opacity, transform;
+}
+.star.warm { background: #ffeebb; }
+.star.blue { background: #ccdeff; }
+.star.big  { background: #fff; }
+.star.big::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 65%);
+}
+@keyframes star-twinkle {
+  0%,100% { opacity: var(--min-op,0.1); transform: scale(1); }
+  50%      { opacity: var(--max-op,1);  transform: scale(var(--sc,1.1)); }
+}
+
+/* ---- Lantern: nested so rise & sway transforms never conflict ---- */
+/* Outer: handles vertical rise + fade */
+.lantern {
+  position: absolute;
+  bottom: -140px;
+  will-change: transform, opacity;
+  animation: lantern-rise var(--rise,20s) cubic-bezier(0.2,0.05,0.3,1) infinite var(--delay,0s);
+}
+@keyframes lantern-rise {
+  0%   { transform: translateY(0);       opacity: 0;   }
+  4%   { opacity: 1; }
+  85%  { opacity: var(--op, 0.88); }
+  100% { transform: translateY(-120vh);  opacity: 0;   }
+}
+/* Inner: handles horizontal sway only */
+.lantern-inner {
+  will-change: transform;
+  animation: lantern-sway var(--sway,6s) ease-in-out infinite var(--sdelay,0s);
+}
+@keyframes lantern-sway {
+  0%,100% { transform: translateX(0); }
+  30%     { transform: translateX(var(--sl,-8px)); }
+  70%     { transform: translateX(var(--sr, 8px)); }
+}
+
+/* Lantern SVG glows and flickers — opacity only */
+.lantern svg {
+  display: block;
+  filter: drop-shadow(0 0 var(--gr,10px) var(--gc,rgba(255,200,60,0.8)));
+  animation: lantern-flicker var(--flick,2.8s) ease-in-out infinite var(--fd,0s);
+  will-change: opacity;
+}
+@keyframes lantern-flicker {
+  0%,100% { opacity: 1;    }
+  15%     { opacity: 0.93; }
+  30%     { opacity: 1;    }
+  55%     { opacity: 0.88; }
+  75%     { opacity: 0.96; }
+  88%     { opacity: 0.91; }
 }
 
 /* ===================== LANDING ===================== */
@@ -690,8 +778,8 @@ body {
 </head>
 <body>
 
-<!-- ========== LANTERN SKY ========== -->
-<canvas id="sky-canvas"></canvas>
+<!-- ========== CSS SKY BACKGROUND ========== -->
+<div id="sky-bg"></div>
 
 <!-- ========== LANDING ========== -->
 <div id="landing">
@@ -1161,181 +1249,250 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /* ============================================================
-   LANTERN SKY CANVAS
+   CSS SKY  — all animation via compositor (transform + opacity)
    ============================================================ */
 (function() {
-  const canvas = document.getElementById('sky-canvas');
-  const ctx    = canvas.getContext('2d');
+  const sky = document.getElementById('sky-bg');
+  window.pauseCanvas  = function() {};
+  window.resumeCanvas = function() {};
 
-  let W, H, stars = [], lanterns = [];
-  let rafId = null;
-  let paused = false;
+  const W = window.innerWidth;
+  const H = window.innerHeight;
 
-  // Expose pause/resume globally so openEnvelope can call them
-  window.pauseCanvas  = function() { paused = true; };
-  window.resumeCanvas = function() {
-    if (paused) { paused = false; if (!rafId) draw(); }
-  };
-
-  function resize() {
-    W = canvas.width  = window.innerWidth;
-    H = canvas.height = window.innerHeight;
+  /* ── Stars: 400+ densely packed ─────────────────────────── */
+  const starCount = Math.min(500, Math.floor(W * H / 1800));
+  for (let i = 0; i < starCount; i++) {
+    const s   = document.createElement('div');
+    const t   = Math.random();
+    const px  = t < 0.55 ? Math.random()*0.6+0.25
+              : t < 0.85 ? Math.random()*1.0+0.7
+              : t < 0.96 ? Math.random()*1.4+1.5
+              :              Math.random()*1.8+2.8;   // rare bright
+    const col = Math.random();
+    const cls = 'star'
+              + (col < 0.14 ? ' warm' : col < 0.24 ? ' blue' : '')
+              + (px  > 2.4  ? ' big'  : '');
+    s.className = cls;
+    s.style.cssText = [
+      `left:${(Math.random()*100).toFixed(2)}%`,
+      `top:${(Math.random()*92).toFixed(2)}%`,
+      `width:${px.toFixed(2)}px`,
+      `height:${px.toFixed(2)}px`,
+      `--dur:${(Math.random()*6+1.5).toFixed(1)}s`,
+      `--delay:-${(Math.random()*10).toFixed(1)}s`,
+      `--min-op:${(Math.random()*0.12+0.04).toFixed(2)}`,
+      `--max-op:${(Math.random()*0.4+0.6).toFixed(2)}`,
+      `--sc:${(Math.random()*0.25+0.92).toFixed(2)}`
+    ].join(';');
+    sky.appendChild(s);
   }
 
-  /* --- Stars --- */
-  function initStars() {
-    stars = [];
-    const count = Math.floor((W * H) / 3000);
-    for (let i = 0; i < count; i++) {
-      stars.push({
-        x:    Math.random() * W,
-        y:    Math.random() * H * 0.85,
-        r:    Math.random() * 1.2 + 0.2,
-        a:    Math.random(),
-        da:   (Math.random() * 0.004 + 0.001) * (Math.random() < 0.5 ? 1 : -1),
-        hue:  Math.random() < 0.15 ? 40 : 0,
-      });
-    }
+  /* ── Tangled-style lantern SVG builder ──────────────────── *
+   *  Round barrel body, slightly wider at middle,             *
+   *  semi-transparent glowing paper, visible inner flame,     *
+   *  top ring cap, bottom ring cap, hanging string            *
+   * ────────────────────────────────────────────────────────  */
+  function makeLantern(r, hue) {
+    const ns  = 'http://www.w3.org/2000/svg';
+    const id  = 'tl' + Math.random().toString(36).slice(2,8);
+
+    /* Dimensions - barrel: wider at equator, narrower at poles */
+    const cx   = r + 14;          // SVG centre x (padding for glow)
+    const tw   = (r + 14) * 2;    // total SVG width
+    const th   = r * 2.8 + 40;    // total SVG height (inc string+flame)
+    const ty   = 16;              // top of body (below string)
+    const bh   = r * 2.2;         // body height
+    const by   = ty + 4;          // body y start (below cap)
+
+    /* Colour palette */
+    const core   = `hsl(${hue},100%,94%)`;
+    const mid    = `hsl(${hue},95%,78%)`;
+    const edge   = `hsl(${hue},85%,58%)`;
+    const dark   = `hsl(${hue-8},70%,38%)`;
+    const capCol = `hsl(${hue-12},60%,32%)`;
+    const wireC  = `rgba(180,120,40,0.6)`;
+
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('width',   tw);
+    svg.setAttribute('height',  th);
+    svg.setAttribute('viewBox', `0 0 ${tw} ${th}`);
+
+    /* Control points for the barrel shape:
+       The body is drawn as a path with cubic bezier sides
+       so it bulges at the equator like a real paper lantern  */
+    const top    = by;
+    const bot    = by + bh;
+    const mid_y  = by + bh * 0.5;
+    const topW   = r * 0.52;   // half-width at top ring
+    const midW   = r * 0.98;   // half-width at equator (widest)
+    const botW   = r * 0.50;   // half-width at bottom ring
+
+    /* Left and right curves */
+    const pathL = `M ${cx-topW} ${top}
+      C ${cx-midW*1.05} ${top  + bh*0.25},
+        ${cx-midW*1.05} ${bot  - bh*0.25},
+        ${cx-botW} ${bot}`;
+    const pathR = `M ${cx+topW} ${top}
+      C ${cx+midW*1.05} ${top  + bh*0.25},
+        ${cx+midW*1.05} ${bot  - bh*0.25},
+        ${cx+botW} ${bot}`;
+
+    /* Full closed barrel shape for fills */
+    const barrelPath =
+      `M ${cx-topW} ${top}
+       C ${cx-midW*1.05} ${top+bh*0.25}, ${cx-midW*1.05} ${bot-bh*0.25}, ${cx-botW} ${bot}
+       L ${cx+botW} ${bot}
+       C ${cx+midW*1.05} ${bot-bh*0.25}, ${cx+midW*1.05} ${top+bh*0.25}, ${cx+topW} ${top}
+       Z`;
+
+    /* Rib y-positions (horizontal rings at ~20%, 40%, 60%, 80%) */
+    const ribs = [0.18, 0.38, 0.58, 0.78].map(t => {
+      const y  = by + bh * t;
+      /* width at this y by lerping top/mid/bot */
+      const tt = t < 0.5 ? t/0.5 : (1-t)/0.5;
+      const hw = t < 0.5
+        ? topW + (midW - topW) * (t / 0.5)
+        : midW + (botW - midW) * ((t - 0.5) / 0.5);
+      return { y, hw };
+    });
+
+    svg.innerHTML = `
+      <defs>
+        <!-- Radial glow for the paper body -->
+        <radialGradient id="${id}r" cx="42%" cy="36%" r="60%">
+          <stop offset="0%"   stop-color="${core}" stop-opacity="0.98"/>
+          <stop offset="38%"  stop-color="${mid}"  stop-opacity="0.9"/>
+          <stop offset="75%"  stop-color="${edge}" stop-opacity="0.82"/>
+          <stop offset="100%" stop-color="${dark}" stop-opacity="0.75"/>
+        </radialGradient>
+        <!-- Translucent paper sheen -->
+        <linearGradient id="${id}s" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%"   stop-color="rgba(255,255,255,0.18)"/>
+          <stop offset="30%"  stop-color="rgba(255,255,255,0.28)"/>
+          <stop offset="60%"  stop-color="rgba(255,255,255,0.06)"/>
+          <stop offset="100%" stop-color="rgba(0,0,0,0.08)"/>
+        </linearGradient>
+        <!-- Vertical gradient for depth -->
+        <linearGradient id="${id}v" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%"   stop-color="rgba(255,255,255,0.10)"/>
+          <stop offset="50%"  stop-color="rgba(255,255,255,0.0)"/>
+          <stop offset="100%" stop-color="rgba(0,0,0,0.12)"/>
+        </linearGradient>
+        <!-- Clip to barrel shape -->
+        <clipPath id="${id}c">
+          <path d="${barrelPath}"/>
+        </clipPath>
+      </defs>
+
+      <!-- Hanging string -->
+      <line x1="${cx}" y1="0" x2="${cx}" y2="${ty}"
+        stroke="${wireC}" stroke-width="0.9"/>
+
+      <!-- Body: fill with radial glow -->
+      <path d="${barrelPath}" fill="url(#${id}r)"/>
+
+      <!-- Sheen overlays clipped to barrel -->
+      <g clip-path="url(#${id}c)">
+        <rect x="0" y="${top}" width="${tw}" height="${bh}" fill="url(#${id}s)"/>
+        <rect x="0" y="${top}" width="${tw}" height="${bh}" fill="url(#${id}v)"/>
+      </g>
+
+      <!-- Side curves (wire lines) -->
+      <path d="${pathL}" fill="none" stroke="${wireC}" stroke-width="0.7" opacity="0.7"/>
+      <path d="${pathR}" fill="none" stroke="${wireC}" stroke-width="0.7" opacity="0.7"/>
+
+      <!-- Horizontal ribs -->
+      ${ribs.map(({y,hw}) =>
+        `<ellipse cx="${cx}" cy="${y}" rx="${hw}" ry="${r*0.06}"
+          fill="none" stroke="${wireC}" stroke-width="0.9" opacity="0.65"/>`
+      ).join('')}
+
+      <!-- Top ring cap -->
+      <ellipse cx="${cx}" cy="${top}" rx="${topW}" ry="${r*0.1}"
+        fill="${capCol}" opacity="0.92"/>
+      <ellipse cx="${cx}" cy="${top}" rx="${topW*0.7}" ry="${r*0.06}"
+        fill="rgba(0,0,0,0.25)"/>
+
+      <!-- Bottom ring cap -->
+      <ellipse cx="${cx}" cy="${bot}" rx="${botW}" ry="${r*0.1}"
+        fill="${capCol}" opacity="0.9"/>
+
+      <!-- Inner flame glow (seen through paper) -->
+      <ellipse cx="${cx}" cy="${mid_y}" rx="${midW*0.55}" ry="${bh*0.28}"
+        fill="rgba(255,240,120,0.18)" clip-path="url(#${id}c)"/>
+      <ellipse cx="${cx}" cy="${mid_y+bh*0.1}" rx="${midW*0.3}" ry="${bh*0.18}"
+        fill="rgba(255,255,180,0.22)" clip-path="url(#${id}c)"/>
+
+      <!-- Visible flame below body -->
+      <ellipse cx="${cx}" cy="${bot+10}" rx="${r*0.28}" ry="${r*0.22}"
+        fill="rgba(255,190,40,0.5)"/>
+      <ellipse cx="${cx}" cy="${bot+9}"  rx="${r*0.16}" ry="${r*0.28}"
+        fill="rgba(255,230,100,0.82)"/>
+      <ellipse cx="${cx}" cy="${bot+6}"  rx="${r*0.08}" ry="${r*0.18}"
+        fill="rgba(255,255,200,0.95)"/>
+      <!-- Flame tip -->
+      <path d="M ${cx} ${bot+2} Q ${cx+r*0.04} ${bot-r*0.1} ${cx} ${bot-r*0.18}
+               Q ${cx-r*0.04} ${bot-r*0.1} ${cx} ${bot+2}"
+        fill="rgba(255,255,220,0.7)"/>
+    `;
+    return svg;
   }
 
-  /* --- Lanterns --- */
-  class Lantern {
-    constructor(fromBottom) {
-      this.reset(fromBottom);
-    }
-    reset(fromBottom) {
-      this.x    = Math.random() * W;
-      this.y    = fromBottom ? H + 60 : H * (0.2 + Math.random() * 0.8);
-      this.vy   = -(0.3 + Math.random() * 0.5);
-      this.vx   = (Math.random() - 0.5) * 0.25;
-      this.w    = 14 + Math.random() * 10;
-      this.h    = this.w * 1.4;
-      this.glow = 18 + Math.random() * 18;
-      this.alpha = 0.65 + Math.random() * 0.35;
-      this.flicker = Math.random() * Math.PI * 2;
-      this.flickerSpeed = 0.03 + Math.random() * 0.03;
-      // warm amber to gold hue
-      this.hue  = 28 + Math.random() * 20;
-      this.sat  = 85 + Math.random() * 15;
-      this.lit  = 60 + Math.random() * 20;
-    }
-    update() {
-      this.x += this.vx + Math.sin(Date.now() * 0.0005 + this.y * 0.01) * 0.15;
-      this.y += this.vy;
-      this.flicker += this.flickerSpeed;
-      if (this.y < -80) this.reset(true);
-    }
-    draw(ctx) {
-      const f = 0.92 + Math.sin(this.flicker) * 0.08;
-      const a = this.alpha * f;
-      const gw = this.w * 0.5;
-      const gh = this.h * 0.55;
-      const gx = this.x;
-      const gy = this.y;
+  /* ── Spawn lanterns ─────────────────────────────────────── */
+  /* More lanterns: 30–50 depending on screen width */
+  const lanternCount = Math.min(50, Math.max(28, Math.floor(W / 18)));
 
-      /* outer glow */
-      const outerGlow = ctx.createRadialGradient(gx, gy, 0, gx, gy, this.glow * 2.2);
-      outerGlow.addColorStop(0,   `hsla(${this.hue},${this.sat}%,${this.lit}%,${a * 0.45})`);
-      outerGlow.addColorStop(0.4, `hsla(${this.hue},${this.sat}%,${this.lit}%,${a * 0.15})`);
-      outerGlow.addColorStop(1,   `hsla(${this.hue},${this.sat}%,${this.lit}%,0)`);
-      ctx.beginPath();
-      ctx.arc(gx, gy, this.glow * 2.2, 0, Math.PI * 2);
-      ctx.fillStyle = outerGlow;
-      ctx.fill();
+  for (let i = 0; i < lanternCount; i++) {
+    const wrap = document.createElement('div');
+    wrap.className = 'lantern';
 
-      /* lantern body */
-      ctx.save();
-      ctx.globalAlpha = a;
-      ctx.beginPath();
-      ctx.ellipse(gx, gy, gw, gh, 0, 0, Math.PI * 2);
-      const bodyGrad = ctx.createRadialGradient(gx - gw * 0.2, gy - gh * 0.2, 0, gx, gy, Math.max(gw, gh));
-      bodyGrad.addColorStop(0,   `hsla(${this.hue + 15},100%,85%,0.95)`);
-      bodyGrad.addColorStop(0.5, `hsla(${this.hue},${this.sat}%,${this.lit}%,0.9)`);
-      bodyGrad.addColorStop(1,   `hsla(${this.hue - 10},${this.sat - 10}%,${this.lit - 20}%,0.7)`);
-      ctx.fillStyle = bodyGrad;
-      ctx.fill();
+    /* Size: 3 tiers — small background, mid, large foreground */
+    const tier  = Math.random();
+    const r     = tier < 0.4 ? Math.random()*4+6     // small  6–10
+                : tier < 0.8 ? Math.random()*5+11    // mid   11–16
+                :               Math.random()*6+17;  // large 17–23
 
-      /* top cap */
-      ctx.beginPath();
-      ctx.ellipse(gx, gy - gh, gw * 0.55, gh * 0.12, 0, 0, Math.PI * 2);
-      ctx.fillStyle = `hsla(${this.hue},60%,35%,0.8)`;
-      ctx.fill();
+    /* Hue: warm gold range (38–52) */
+    const hue = Math.random()*14+38;
 
-      /* bottom cap */
-      ctx.beginPath();
-      ctx.ellipse(gx, gy + gh, gw * 0.45, gh * 0.1, 0, 0, Math.PI * 2);
-      ctx.fillStyle = `hsla(${this.hue},60%,30%,0.7)`;
-      ctx.fill();
+    const rise   = (Math.random()*10 + 18).toFixed(1);   // 18–28s — slow, smooth
+    const delay  = -(Math.random()*28).toFixed(1);        // pre-stagger across full cycle
+    const sway   = (Math.random()*3  + 5 ).toFixed(1);   // 5–8s
+    const sdelay = -(Math.random()*5).toFixed(1);
+    const sl     = -(Math.random()*12+4).toFixed(0);
+    const sr     =  (Math.random()*12+4).toFixed(0);
+    const flick  = (Math.random()*2 + 2).toFixed(1);
+    const fd     = -(Math.random()*3).toFixed(1);
+    const op     = (tier < 0.4 ? Math.random()*0.2+0.5   // small — dimmer
+                   :              Math.random()*0.15+0.75).toFixed(2);
+    const gr     = Math.round(r * 1.1);
+    const gc     = `hsla(${Math.round(hue)},95%,65%,0.8)`;
 
-      /* inner core shine */
-      const coreGrad = ctx.createRadialGradient(gx - gw * 0.15, gy - gh * 0.1, 0, gx, gy, gw * 0.9);
-      coreGrad.addColorStop(0,   'rgba(255,255,220,0.6)');
-      coreGrad.addColorStop(0.5, 'rgba(255,220,140,0.15)');
-      coreGrad.addColorStop(1,   'rgba(255,200,80,0)');
-      ctx.beginPath();
-      ctx.ellipse(gx, gy, gw * 0.8, gh * 0.8, 0, 0, Math.PI * 2);
-      ctx.fillStyle = coreGrad;
-      ctx.fill();
+    wrap.style.cssText = [
+      `left:${(Math.random()*98).toFixed(1)}%`,
+      `--rise:${rise}s`,
+      `--delay:${delay}s`,
+      `--sway:${sway}s`,
+      `--sdelay:${sdelay}s`,
+      `--sl:${sl}px`,
+      `--sr:${sr}px`,
+      `--op:${op}`
+    ].join(';');
 
-      ctx.restore();
-    }
+    const svgEl = makeLantern(r, hue);
+    svgEl.style.cssText = [
+      `--flick:${flick}s`,
+      `--fd:${fd}s`,
+      `--gr:${gr}px`,
+      `--gc:${gc}`
+    ].join(';');
+
+    const inner = document.createElement('div');
+    inner.className = 'lantern-inner';
+    inner.appendChild(svgEl);
+    wrap.appendChild(inner);
+    sky.appendChild(wrap);
   }
-
-  function initLanterns() {
-    lanterns = [];
-    const count = Math.max(12, Math.floor(W / 60));
-    for (let i = 0; i < count; i++) {
-      lanterns.push(new Lantern(false));
-    }
-  }
-
-  /* --- Render loop --- */
-  function draw() {
-    if (paused) { rafId = null; return; }
-
-    /* deep indigo-black sky gradient */
-    const sky = ctx.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0,    '#02010A');
-    sky.addColorStop(0.35, '#0A0415');
-    sky.addColorStop(0.7,  '#150A0A');
-    sky.addColorStop(1,    '#1E0A05');
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, W, H);
-
-    /* draw stars */
-    for (const s of stars) {
-      s.a += s.da;
-      if (s.a > 1 || s.a < 0.05) s.da *= -1;
-      const color = s.hue ? `rgba(255,235,180,${s.a})` : `rgba(255,255,255,${s.a})`;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = color;
-      ctx.fill();
-    }
-
-    /* draw lanterns */
-    for (const l of lanterns) {
-      l.update();
-      l.draw(ctx);
-    }
-
-    rafId = requestAnimationFrame(draw);
-  }
-
-  function init() {
-    resize();
-    initStars();
-    initLanterns();
-    draw();
-  }
-
-  window.addEventListener('resize', () => {
-    resize();
-    initStars();
-    initLanterns();
-  });
-
-  init();
 })();
 
 /* ============================================================
@@ -1346,9 +1503,6 @@ let opened = false;
 function openEnvelope() {
   if (opened) return;
   opened = true;
-
-  // Stop canvas immediately — free up GPU for the animation
-  pauseCanvas();
 
   const seal  = document.getElementById('wax-seal');
   const flap  = document.getElementById('env-flap-svg');
@@ -1371,12 +1525,12 @@ function openEnvelope() {
 
   /* open flap */
   setTimeout(() => {
-    flap.style.transform      = 'rotateX(-178deg) translateZ(0)';
+    flap.style.transform       = 'rotateX(-178deg) translateZ(0)';
     flap.style.transformOrigin = 'top center';
-    flap.style.transition     = 'transform 1.3s cubic-bezier(0.25,0.46,0.45,0.94)';
+    flap.style.transition      = 'transform 1.3s cubic-bezier(0.25,0.46,0.45,0.94)';
   }, 200);
 
-  /* reveal site — canvas stays paused, it's hidden under the site anyway */
+  /* reveal site */
   setTimeout(() => {
     document.getElementById('landing').classList.add('hidden');
     document.getElementById('site').classList.add('visible');
@@ -1396,11 +1550,7 @@ function closeInvitation() {
     seal.style.animation = 'none';
     seal.querySelector('.seal-hint').style.opacity = '1';
     document.getElementById('envelope').style.transform = '';
-    requestAnimationFrame(() => {
-      seal.style.animation = '';
-      // Resume canvas now that we're back on the landing page
-      resumeCanvas();
-    });
+    requestAnimationFrame(() => { seal.style.animation = ''; });
   }, 850);
 }
 
