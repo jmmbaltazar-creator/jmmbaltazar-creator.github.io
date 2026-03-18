@@ -783,6 +783,92 @@ body {
 #seal-svg-fallback {
   display: block;
 }
+
+/* entourage */
+.entourage-wrap {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(200, 98, 58, 0.15);
+  border-radius: 10px;
+  padding: clamp(24px, 5vw, 36px) clamp(16px, 4vw, 32px);
+  margin-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.entourage-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.entourage-row.single {
+  grid-template-columns: 1fr;
+}
+@media (max-width: 480px) {
+  .entourage-row {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+.entourage-group {
+  text-align: center;
+}
+.entourage-role {
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--orange);
+  margin-bottom: 8px;
+}
+.entourage-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(18px, 4.5vw, 22px);
+  color: var(--ink);
+  line-height: 1.4;
+}
+/* For roles that have a partner/pair description */
+.entourage-sub {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-top: -2px;
+  margin-bottom: 6px;
+  font-style: italic;
+}
+
+.principal-sponsors-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 28px;
+  row-gap: 8px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.principal-sponsor {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(18px, 4.5vw, 22px);
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.principal-sponsor.left {
+  text-align: right;
+}
+
+.principal-sponsor.right {
+  text-align: left;
+}
+
+@media (max-width: 480px) {
+  .principal-sponsors-grid {
+    grid-template-columns: 1fr;
+    row-gap: 4px;
+  }
+
+  .principal-sponsor.left,
+  .principal-sponsor.right {
+    text-align: center;
+  }
+}
 </style>
 </head>
 <body>
@@ -1112,6 +1198,164 @@ body {
     <!-- ======= PAGE 3 ======= -->
     <div class="page" id="page-2">
       <div class="page-inner">
+	  
+	    <p class="section-label" style="text-align:center;">Wedding Entourage</p>
+        <h1 class="section-title" style="text-align:center;">Bridal Entourage</h1>
+        <div class="section-divider"><div class="div-line"></div><span class="div-ornament">✦</span><div class="div-line"></div></div>
+
+        <div class="entourage-wrap">
+          
+          <div class="entourage-row">
+            <div class="entourage-group">
+              <div class="entourage-role">Groom's Parents</div>
+              <div class="entourage-name">Engr. Joseph Allan Baltazar</div>
+              <div class="entourage-name">Mrs. Editha Baltazar</div>
+            </div>
+            <div class="entourage-group">
+              <div class="entourage-role">Bride's Parents</div>
+              <div class="entourage-name">Mr. Renato Manalo</div>
+              <div class="entourage-name">Mrs. Benilda Manalo (†)</div>
+            </div>
+          </div>
+
+          <div class="entourage-row single">
+		    <div class="entourage-group">
+			  <div class="entourage-role">Principal Sponsors</div>
+
+			  <div class="principal-sponsors-grid">
+			    <div class="principal-sponsor left">Mr. Rody Quinones</div>
+			    <div class="principal-sponsor right">Mrs. Lala Gonzales</div>
+
+			    <div class="principal-sponsor left">Mr. Mariano Ereso</div>
+			    <div class="principal-sponsor right">Mrs. Lillian Bellamy</div>
+
+			    <div class="principal-sponsor left">Mr. Angelo Cuña</div>
+			    <div class="principal-sponsor right">Mrs. Jhizelle Ann Cuña</div>
+				
+				<div class="principal-sponsor left">Mr. Rael Prado</div>
+			    <div class="principal-sponsor right">Mrs. Joana Hughes</div>
+				
+				<div class="principal-sponsor left">Mr. Aris Cruz</div>
+			    <div class="principal-sponsor right">Mrs. Perpetua Cruz</div>
+				
+				<div class="principal-sponsor left">Mr. Alphonsus Benjamin</div>
+			    <div class="principal-sponsor right">Mrs. Josielyn Baltazar</div>
+			  </div>
+		    </div>
+		  </div>
+		  
+		  <div class="entourage-row single">
+            <div class="entourage-group">
+			  <div class="entourage-role">Secondary Sponsors</div>
+			  
+			  <div class="principal-sponsors-grid">
+			    <div class="principal-sponsor left">Mr. Bryan Manalo</div>
+			    <div class="principal-sponsor right">Ms. Joanna Baltazar</div>
+			  </div>
+              <div class="entourage-sub">Cord</div>
+			  
+              <div class="principal-sponsors-grid">
+			    <div class="principal-sponsor left">Mr. John Vincent Fijer</div>
+			    <div class="principal-sponsor right">Ms. Maria Celina Garcia</div>
+			  </div>
+              <div class="entourage-sub">Veil</div>
+			  
+              <div class="principal-sponsors-grid">
+			    <div class="principal-sponsor left">Mr. Jomari Magistrado</div>
+			    <div class="principal-sponsor right">Ms. Maria Clariz Garcia</div>
+			  </div>
+              <div class="entourage-sub">Candle</div>
+            </div>
+          </div>
+		  
+		  <div class="entourage-row single">
+		    <div class="entourage-group">
+			  <div class="entourage-role">Flower Girls</div>
+			  <div class="entourage-name">Amber Frey Cruz</div>
+			  <div class="entourage-name">Zoey Wynea Roldan</div>
+			  <div class="entourage-name">Jeraldine Manalo</div>
+			</div>
+		  </div>
+		  
+		  <div class="entourage-row single">
+		    <div class="entourage-group">
+			  <div class="entourage-role">Bearers</div>
+			  <div class="entourage-name">Johannes Magistrado</div>
+			  <div class="entourage-sub">Coin</div>
+			  <div class="entourage-name">Lukas Baltazar</div>
+			  <div class="entourage-sub">Ring</div>
+			  <div class="entourage-name">Miggy Magistrado</div>
+			  <div class="entourage-sub">Bible</div>
+			</div>
+		  </div>
+
+          <div class="entourage-row">
+            <div class="entourage-group">
+              <div class="entourage-role">Best Man</div>
+              <div class="entourage-name">Mr. Aaron Michael Sina-on</div>
+            </div>
+            <div class="entourage-group">
+              <div class="entourage-role">Maid of Honor</div>
+              <div class="entourage-name">Ms. Janine Magistrado</div>
+            </div>
+          </div>
+
+          <div class="entourage-row">
+            <div class="entourage-group">
+              <div class="entourage-role">Groomsmen</div>
+              <div class="entourage-name">Mr. John Jayterson Dela Cueva</div>
+              <div class="entourage-name">Mr. Kevin Neil Briones</div>
+              <div class="entourage-name">Mr. John Paul Aquino</div>
+			  <div class="entourage-name">Mr. Lawrence Angelo Villafuerte</div>
+            </div>
+            <div class="entourage-group">
+              <div class="entourage-role">Bridesmaids</div>
+              <div class="entourage-name">Ms. Yoshika Dofitas</div>
+              <div class="entourage-name">Ms. Donna Luzon</div>
+              <div class="entourage-name">Ms. Kelsey Vera Carpina</div>
+			  <div class="entourage-name">Ms. Erica Dofitas</div>
+            </div>
+          </div>
+
+        </div>
+
+        <h1 class="section-title" style="text-align:center;">Liturgical Entourage</h1>
+        <div class="section-divider"><div class="div-line"></div><span class="div-ornament">✦</span><div class="div-line"></div></div>
+
+        <div class="entourage-wrap">
+          
+          <div class="entourage-row single">
+            <div class="entourage-group">
+              <div class="entourage-role">Officiating Priest</div>
+              <div class="entourage-name">Rev. Fr. TBD TBD</div>
+            </div>
+          </div>
+
+          <div class="entourage-row">
+            <div class="entourage-group">
+              <div class="entourage-role">First Reading</div>
+              <div class="entourage-name">Jillian Jean Manalo</div>
+            </div>
+            <div class="entourage-group">
+              <div class="entourage-role">Second Reading</div>
+              <div class="entourage-name">Georgina Gael Gregorio</div>
+            </div>
+			<div class="entourage-group">
+              <div class="entourage-role">Responsorial Psalm</div>
+              <div class="entourage-name">Ramon Jerico Garcia</div>
+            </div>
+			<div class="entourage-group">
+              <div class="entourage-role">Prayers of the Faithful</div>
+              <div class="entourage-name">Sean Clyde Baquio</div>
+            </div>
+			<div class="entourage-group">
+              <div class="entourage-role">Offertory</div>
+              <div class="entourage-name">Gabrielle Gwyneth Gregorio</div>
+			  <div class="entourage-name">Precious Grace Trecho</div>
+            </div>
+          </div>
+
+        </div>
 
         <p class="section-label" style="text-align:center;">Everything you need to know</p>
         <h1 class="section-title" style="text-align:center;">Frequently Asked Questions</h1>
