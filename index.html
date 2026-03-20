@@ -804,9 +804,25 @@ body {
   grid-template-columns: 1fr;
 }
 @media (max-width: 480px) {
+  .entourage-wrap {
+    padding: 18px 14px;
+    gap: 18px;
+  }
+
   .entourage-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .entourage-row.single {
     grid-template-columns: 1fr;
-    gap: 24px;
+  }
+
+  .entourage-group {
+    background: rgba(255,255,255,0.55);
+    border: 1px solid rgba(200, 98, 58, 0.12);
+    border-radius: 10px;
+    padding: 12px 10px;
   }
 }
 .entourage-group {
@@ -859,9 +875,28 @@ body {
 }
 
 @media (max-width: 480px) {
+  .entourage-role {
+    font-size: 9px;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+
+  .entourage-name,
+  .principal-sponsor {
+    font-size: 16px;
+    line-height: 1.35;
+  }
+
+  .entourage-sub {
+    font-size: 11px;
+    margin-top: 2px;
+    margin-bottom: 4px;
+  }
+
   .principal-sponsors-grid {
-    grid-template-columns: 1fr;
-    row-gap: 4px;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 14px;
+    row-gap: 6px;
   }
 
   .principal-sponsor.left,
@@ -980,7 +1015,7 @@ body {
     <div class="nav-tabs">
       <button class="nav-tab active" onclick="switchPage(0)">Our Day</button>
       <button class="nav-tab"        onclick="switchPage(1)">Details</button>
-      <button class="nav-tab"        onclick="switchPage(2)">FAQs</button>
+      <button class="nav-tab"        onclick="switchPage(2)">More Info</button>
     </div>
     <button class="nav-close" onclick="closeInvitation()">✕</button>
   </nav>
@@ -1348,12 +1383,15 @@ body {
               <div class="entourage-role">Prayers of the Faithful</div>
               <div class="entourage-name">Sean Clyde Baquio</div>
             </div>
-			<div class="entourage-group">
+          </div>
+		  
+		  <div class="entourage-row single">
+		    <div class="entourage-group">
               <div class="entourage-role">Offertory</div>
               <div class="entourage-name">Gabrielle Gwyneth Gregorio</div>
 			  <div class="entourage-name">Precious Grace Trecho</div>
             </div>
-          </div>
+		  </div>
 
         </div>
 
