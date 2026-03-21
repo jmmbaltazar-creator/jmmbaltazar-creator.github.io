@@ -328,14 +328,32 @@ body {
 }
 
 .seal-hint {
-  position:absolute; bottom:-28px; left:50%; transform:translateX(-50%);
-  font-size:9px; letter-spacing:3px; text-transform:uppercase;
-  color:rgba(237,217,163,0.65); white-space:nowrap;
-  animation: hint-blink 2.8s ease-in-out infinite;
+  position:absolute;
+  bottom:-42px;
+  left:50%;
+  transform:translateX(-50%);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:7px 14px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:2.5px;
+  text-transform:uppercase;
+  color:#fff7dd;
+  white-space:nowrap;
+  background:rgba(90, 32, 32, 0.72);
+  border:1px solid rgba(237,217,163,0.45);
+  box-shadow:0 6px 18px rgba(0,0,0,0.28);
+  text-shadow:0 1px 4px rgba(0,0,0,0.45);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: hint-blink 1.8s ease-in-out infinite;
 }
 @keyframes hint-blink {
-  0%,100% { opacity:0.35; }
-  50%      { opacity:0.9; }
+  0%,100% { opacity:0.72; transform:translateX(-50%) translateY(0); }
+  50%      { opacity:1; transform:translateX(-50%) translateY(-3px); }
 }
 
 /* ripple */
@@ -1270,7 +1288,7 @@ body {
 			  <div class="entourage-role">Principal Sponsors</div>
 
 			  <div class="principal-sponsors-grid">
-			    <div class="principal-sponsor left">Rody Quinones</div>
+			    <div class="principal-sponsor left">Rody Quiñones</div>
 			    <div class="principal-sponsor right">Lala Gonzales</div>
 
 			    <div class="principal-sponsor left">Mariano Ereso</div>
